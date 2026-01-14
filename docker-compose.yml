@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ecommerce-postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ecommerce
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce-api
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres:5432/ecommerce?schema=public
+      JWT_SECRET: your-secret-key-change-this-in-production
+      JWT_EXPIRES_IN: 1d
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: admin123
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    command: sh -c "npx prisma generate && npx prisma db push --accept-data-loss && npx prisma db seed && node dist/main"
+
+volumes:
+  postgres_data:
+
+
+networks:
+  ecommerce-network:
+    driver: bridge

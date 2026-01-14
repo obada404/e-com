@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  cart      Cart?
+  createdAt DateTime @default(now())
+
+  @@map("users")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  products  Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String         @id @default(uuid())
+  title       String
+  name        String
+  description String?        @db.Text
+  note        String?        @db.Text
+  quantity    Int            @default(0)
+  categoryId  String
+  category    Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  images      ProductImage[]
+  sizes       ProductSize[]
+  cartItems   CartItem[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  url       String
+  alt       String?
+  order     Int      @default(0)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("product_images")
+}
+
+model ProductSize {
+  id        String   @id @default(uuid())
+  size      String
+  price     Float
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, size])
+  @@map("product_sizes")
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("carts")
+}
+
+model CartItem {
+  id          String      @id @default(uuid())
+  cartId      String
+  cart        Cart        @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size        String?
+  quantity    Int         @default(1)
+  price       Float
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("cart_items")
+  @@index([cartId, productId, size])
+}
+
+model Promotion {
+  id            String   @id @default(uuid())
+  title         String
+  imageUrl      String
+  description   String?  @db.Text
+  appearanceDate DateTime
+  closeDate     DateTime
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("promotions")
+}
+
