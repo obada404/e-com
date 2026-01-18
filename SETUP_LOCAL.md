@@ -47,6 +47,6 @@ The API will be available at:
 ## Default Admin Credentials
 - Email: `admin@example.com`
 - Password: `admin123`
-
+c
 
 

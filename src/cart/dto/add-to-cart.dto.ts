@@ -2,11 +2,6 @@ import { IsUUID, IsString, IsInt, IsNotEmpty, Min, IsOptional } from 'class-vali
 import { ApiProperty } from '@nestjs/swagger';
 
 export class AddToCartDto {
-  @ApiProperty({ example: 'user-uuid', required: false, description: 'Required when creating cart without authentication' })
-  @IsUUID()
-  @IsOptional()
-  userId?: string;
-
   @ApiProperty({ example: 'product-uuid' })
   @IsUUID()
   @IsNotEmpty()

@@ -8,7 +8,6 @@ import {
   Delete,
   UseGuards,
   ParseUUIDPipe,
-  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -24,7 +23,7 @@ import { GetUser } from '../common/decorators/get-user.decorator';
 @ApiTags('cart')
 @Controller('cart')
 export class CartController {
-  constructor(private readonly cartService: CartService) {}
+  constructor(private readonly cartService: CartService) { }
 
   @Get()
   @UseGuards(JwtAuthGuard)
@@ -35,16 +34,14 @@ export class CartController {
   }
 
   @Post('items')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Add item to cart' })
   async addToCart(
+    @GetUser() user: { id: string },
     @Body() addToCartDto: AddToCartDto,
   ) {
-    // For public cart creation, userId must be provided in the DTO
-    if (!addToCartDto.userId) {
-      throw new BadRequestException('userId is required in request body for public cart creation');
-    }
-    const { userId, ...cartData } = addToCartDto;
-    return this.cartService.addToCart(userId, cartData);
+    return this.cartService.addToCart(user.id, addToCartDto);
   }
 
   @Patch('items/:id')
