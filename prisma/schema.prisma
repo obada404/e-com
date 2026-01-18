@@ -39,6 +39,7 @@ model Product {
   description String?        @db.Text
   note        String?        @db.Text
   quantity    Int            @default(0)
+  soldOut     Boolean        @default(false)
   categoryId  String
   category    Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   images      ProductImage[]

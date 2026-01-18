@@ -23,6 +23,7 @@ export class ProductsService {
     return this.prisma.product.create({
       data: {
         ...productData,
+        soldOut: productData.quantity === 0,
         sizes: sizes
           ? {
               create: sizes,
@@ -104,10 +105,18 @@ export class ProductsService {
 
     const { sizes, images, ...productData } = updateProductDto;
 
+    // Determine if product should be marked as sold out
+    const newQuantity =
+      productData.quantity !== undefined
+        ? productData.quantity
+        : product.quantity;
+    const soldOut = newQuantity === 0;
+
     return this.prisma.product.update({
       where: { id },
       data: {
         ...productData,
+        soldOut,
         sizes: sizes
           ? {
               deleteMany: {},

@@ -1,7 +1,12 @@
-import { IsUUID, IsString, IsInt, IsNotEmpty, Min } from 'class-validator';
+import { IsUUID, IsString, IsInt, IsNotEmpty, Min, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class AddToCartDto {
+  @ApiProperty({ example: 'user-uuid', required: false, description: 'Required when creating cart without authentication' })
+  @IsUUID()
+  @IsOptional()
+  userId?: string;
+
   @ApiProperty({ example: 'product-uuid' })
   @IsUUID()
   @IsNotEmpty()
@@ -9,6 +14,7 @@ export class AddToCartDto {
 
   @ApiProperty({ example: 'M', required: false })
   @IsString()
+  @IsOptional()
   size?: string;
 
   @ApiProperty({ example: 1 })
@@ -16,5 +22,6 @@ export class AddToCartDto {
   @Min(1)
   quantity: number;
 }
+
 
 
