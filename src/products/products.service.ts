@@ -1,13 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private storageService: StorageService,
+  ) { }
 
-  async create(createProductDto: CreateProductDto) {
+  async create(
+    createProductDto: CreateProductDto,
+    files?: Express.Multer.File[],
+  ) {
     const category = await this.prisma.category.findUnique({
       where: { id: createProductDto.categoryId },
     });
@@ -18,23 +25,56 @@ export class ProductsService {
       );
     }
 
-    const { sizes, images, ...productData } = createProductDto;
+    // Parse sizes if it's a string (from multipart/form-data)
+    let sizes = createProductDto.sizes;
+    if (typeof sizes === 'string') {
+      try {
+        sizes = JSON.parse(sizes);
+      } catch (error) {
+        throw new Error('Invalid sizes format. Expected JSON array.');
+      }
+    }
+
+    const { images, ...productData } = createProductDto;
+
+    // Upload files to R2 if provided
+    let imageUrls: Array<{ url: string; alt?: string; order: number }> = [];
+    if (files && files.length > 0) {
+      const uploadedUrls = await this.storageService.uploadFiles(files);
+      imageUrls = uploadedUrls.map((url, index) => ({
+        url,
+        alt: `Product image ${index + 1}`,
+        order: index,
+      }));
+    } else if (images && images.length > 0) {
+      // Fallback to provided URLs if no files uploaded
+      imageUrls = images.map((img, index) => ({
+        url: img.url,
+        alt: img.alt || `Product image ${index + 1}`,
+        order: img.order ?? index,
+      }));
+    }
 
     return this.prisma.product.create({
       data: {
-        ...productData,
+        title: productData.title,
+        name: productData.name,
+        description: productData.description,
+        note: productData.note,
+        quantity: productData.quantity,
+        categoryId: productData.categoryId,
         soldOut: productData.quantity === 0,
         sizes: sizes
           ? {
-              create: sizes,
-            }
+            create: sizes,
+          }
           : undefined,
-        images: images
+        images: imageUrls.length > 0
           ? {
-              create: images,
-            }
+            create: imageUrls,
+          }
           : undefined,
-      },
+      } as any,
       include: {
         category: true,
         sizes: {
@@ -82,7 +122,11 @@ export class ProductsService {
     return product;
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto) {
+  async update(
+    id: string,
+    updateProductDto: UpdateProductDto,
+    files?: Express.Multer.File[],
+  ) {
     const product = await this.prisma.product.findUnique({
       where: { id },
     });
@@ -103,7 +147,35 @@ export class ProductsService {
       }
     }
 
-    const { sizes, images, ...productData } = updateProductDto;
+    // Parse sizes if it's a string (from multipart/form-data)
+    let sizes = updateProductDto.sizes;
+    if (sizes && typeof sizes === 'string') {
+      try {
+        sizes = JSON.parse(sizes);
+      } catch (error) {
+        throw new Error('Invalid sizes format. Expected JSON array.');
+      }
+    }
+
+    const { images, ...productData } = updateProductDto;
+
+    // Upload files to R2 if provided
+    let imageUrls: Array<{ url: string; alt?: string; order: number }> | undefined;
+    if (files && files.length > 0) {
+      const uploadedUrls = await this.storageService.uploadFiles(files);
+      imageUrls = uploadedUrls.map((url, index) => ({
+        url,
+        alt: `Product image ${index + 1}`,
+        order: index,
+      }));
+    } else if (images && images.length > 0) {
+      // Fallback to provided URLs if no files uploaded
+      imageUrls = images.map((img, index) => ({
+        url: img.url,
+        alt: img.alt || `Product image ${index + 1}`,
+        order: img.order ?? index,
+      }));
+    }
 
     // Determine if product should be marked as sold out
     const newQuantity =
@@ -112,24 +184,35 @@ export class ProductsService {
         : product.quantity;
     const soldOut = newQuantity === 0;
 
+    const updateData: any = {
+      soldOut,
+    };
+
+    // Only include fields that are being updated
+    if (productData.title !== undefined) updateData.title = productData.title;
+    if (productData.name !== undefined) updateData.name = productData.name;
+    if (productData.description !== undefined) updateData.description = productData.description;
+    if (productData.note !== undefined) updateData.note = productData.note;
+    if (productData.quantity !== undefined) updateData.quantity = productData.quantity;
+    if (productData.categoryId !== undefined) updateData.categoryId = productData.categoryId;
+
+    if (sizes) {
+      updateData.sizes = {
+        deleteMany: {},
+        create: sizes,
+      };
+    }
+
+    if (imageUrls) {
+      updateData.images = {
+        deleteMany: {},
+        create: imageUrls,
+      };
+    }
+
     return this.prisma.product.update({
       where: { id },
-      data: {
-        ...productData,
-        soldOut,
-        sizes: sizes
-          ? {
-              deleteMany: {},
-              create: sizes,
-            }
-          : undefined,
-        images: images
-          ? {
-              deleteMany: {},
-              create: images,
-            }
-          : undefined,
-      },
+      data: updateData,
       include: {
         category: true,
         sizes: {

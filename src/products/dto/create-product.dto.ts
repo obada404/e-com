@@ -13,6 +13,7 @@ import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { ProductSizeDto } from './product-size.dto';
 import { ProductImageDto } from './product-image.dto';
+import { ProductColorDto } from './product-color.dto';
 
 export class CreateProductDto {
   @ApiProperty({ example: 'Premium Laptop Computer' })
@@ -76,5 +77,20 @@ export class CreateProductDto {
   @Type(() => ProductImageDto)
   @IsOptional()
   images?: ProductImageDto[];
+
+  @ApiProperty({
+    type: [ProductColorDto],
+    example: [
+      { color: 'Red' },
+      { color: 'Blue' },
+      { color: 'Green' },
+    ],
+    required: false,
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductColorDto)
+  @IsOptional()
+  colors?: ProductColorDto[];
 }
 

@@ -15,12 +15,18 @@ export class CartService {
     let cart = await this.prisma.cart.findUnique({
       where: { userId },
       include: {
+        user: {
+          select: {
+            mobileNumber: true,
+          },
+        },
         items: {
           include: {
             product: {
               include: {
                 category: true,
                 sizes: true,
+                colors: true,
                 images: {
                   orderBy: { order: 'asc' },
                   take: 1,
@@ -36,12 +42,18 @@ export class CartService {
       cart = await this.prisma.cart.create({
         data: { userId },
         include: {
+          user: {
+            select: {
+              mobileNumber: true,
+            },
+          },
           items: {
             include: {
               product: {
                 include: {
                   category: true,
                   sizes: true,
+                  colors: true,
                   images: {
                     orderBy: { order: 'asc' },
                     take: 1,
@@ -113,6 +125,7 @@ export class CartService {
             include: {
               category: true,
               sizes: true,
+              colors: true,
               images: {
                 orderBy: { order: 'asc' },
                 take: 1,
@@ -136,6 +149,7 @@ export class CartService {
           include: {
             category: true,
             sizes: true,
+            colors: true,
             images: {
               orderBy: { order: 'asc' },
               take: 1,
@@ -181,6 +195,7 @@ export class CartService {
           include: {
             category: true,
             sizes: true,
+            colors: true,
             images: {
               orderBy: { order: 'asc' },
               take: 1,

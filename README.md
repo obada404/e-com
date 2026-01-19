@@ -25,6 +25,14 @@ JWT_SECRET="your-secret-key"
 JWT_EXPIRES_IN="1d"
 ADMIN_EMAIL="admin@example.com"
 ADMIN_PASSWORD="admin123"
+
+# Cloudflare R2 Storage Configuration
+STORAGE_DRIVER=r2
+R2_ENDPOINT=https://your-account-id.r2.cloudflarestorage.com
+R2_ACCESS_KEY_ID=your-access-key-id
+R2_SECRET_ACCESS_KEY=your-secret-access-key
+R2_BUCKET=your-bucket-name
+R2_PUBLIC_URL_BASE=https://pub-your-account-id.r2.dev
 ```
 
 3. Run Prisma migrations:
@@ -45,6 +53,12 @@ npm run start:dev
 - `JWT_EXPIRES_IN` - JWT token expiration time
 - `ADMIN_EMAIL` - Admin user email for seeding
 - `ADMIN_PASSWORD` - Admin user password for seeding
+- `STORAGE_DRIVER` - Storage driver (currently supports `r2`)
+- `R2_ENDPOINT` - Cloudflare R2 endpoint URL
+- `R2_ACCESS_KEY_ID` - R2 access key ID
+- `R2_SECRET_ACCESS_KEY` - R2 secret access key
+- `R2_BUCKET` - R2 bucket name
+- `R2_PUBLIC_URL_BASE` - R2 public URL base for accessing uploaded files
 
 ## API Endpoints
 
@@ -62,9 +76,11 @@ npm run start:dev
 ### Products (JWT required)
 - `GET /products` - Get all products (User, Admin)
 - `GET /products/:id` - Get product by ID (User, Admin)
-- `POST /products` - Create product (Admin only)
-- `PATCH /products/:id` - Update product (Admin only)
+- `POST /products` - Create product (Admin only) - Supports multipart/form-data with image uploads
+- `PATCH /products/:id` - Update product (Admin only) - Supports multipart/form-data with image uploads
 - `DELETE /products/:id` - Delete product (Admin only)
+
+**Note:** Product image uploads are automatically uploaded to Cloudflare R2 storage. Images are returned with full public URLs in product responses.
 
 ### Users (Admin only)
 - `GET /users` - Get all users

@@ -45,6 +45,7 @@ model Product {
   category    Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   images      ProductImage[]
   sizes       ProductSize[]
+  colors      ProductColor[]
   cartItems   CartItem[]
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
@@ -75,6 +76,17 @@ model ProductSize {
 
   @@unique([productId, size])
   @@map("product_sizes")
+}
+
+model ProductColor {
+  id        String   @id @default(uuid())
+  color     String
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([productId, color])
+  @@map("product_colors")
 }
 
 model Cart {
