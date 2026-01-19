@@ -17,6 +17,7 @@ async function main() {
     create: {
       email: adminEmail,
       password: hashedAdminPassword,
+      mobileNumber: '+1234567890',
       role: Role.ADMIN,
     },
   });
@@ -31,6 +32,7 @@ async function main() {
       create: {
         email: 'user1@example.com',
         password: userPassword,
+        mobileNumber: '+1234567891',
         role: Role.USER,
       },
     }),
@@ -40,6 +42,7 @@ async function main() {
       create: {
         email: 'user2@example.com',
         password: userPassword,
+        mobileNumber: '+1234567892',
         role: Role.USER,
       },
     }),
@@ -49,6 +52,7 @@ async function main() {
       create: {
         email: 'user3@example.com',
         password: userPassword,
+        mobileNumber: '+1234567893',
         role: Role.USER,
       },
     }),

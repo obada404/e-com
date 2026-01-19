@@ -27,6 +27,7 @@ export class AuthService {
       data: {
         email: signupDto.email,
         password: hashedPassword,
+        mobileNumber: signupDto.mobileNumber,
       },
     });
 
