@@ -1,0 +1,1042 @@
+{
+	"info": {
+		"_postman_id": "e-commerce-api-collection",
+		"name": "E-Commerce API",
+		"description": "Complete API collection for NestJS E-Commerce Backend",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Signup",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"mobileNumber\": \"+1234567890\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/signup",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "signup"]
+						},
+						"description": "Register a new user"
+					}
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"authToken\", jsonData.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login user and automatically save token"
+					}
+				}
+			]
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "Get All Products",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/products",
+							"host": ["{{baseUrl}}"],
+							"path": ["products"]
+						},
+						"description": "Get all products (Public)"
+					}
+				},
+				{
+					"name": "Get Product by ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/products/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["products", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "product-uuid-here",
+									"description": "Product UUID"
+								}
+							]
+						},
+						"description": "Get a product by ID (Public)"
+					}
+				},
+				{
+					"name": "Create Product",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Premium Laptop Computer",
+									"type": "text"
+								},
+								{
+									"key": "name",
+									"value": "laptop",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "High-performance laptop with latest technology",
+									"type": "text"
+								},
+								{
+									"key": "note",
+									"value": "Available in multiple colors",
+									"type": "text"
+								},
+								{
+									"key": "quantity",
+									"value": "100",
+									"type": "text"
+								},
+								{
+									"key": "categoryId",
+									"value": "category-uuid-here",
+									"type": "text"
+								},
+								{
+									"key": "sizes",
+									"value": "[{\"size\":\"S\",\"price\":29.99},{\"size\":\"M\",\"price\":34.99}]",
+									"type": "text",
+									"description": "JSON array of sizes"
+								},
+								{
+									"key": "colors",
+									"value": "[{\"color\":\"Red\"},{\"color\":\"Blue\"}]",
+									"type": "text",
+									"description": "JSON array of colors"
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": [],
+									"description": "Product images (max 10)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/products",
+							"host": ["{{baseUrl}}"],
+							"path": ["products"]
+						},
+						"description": "Create a product (Admin only)"
+					}
+				},
+				{
+					"name": "Update Product",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Updated Product Title",
+									"type": "text"
+								},
+								{
+									"key": "quantity",
+									"value": "150",
+									"type": "text"
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": [],
+									"description": "New product images (optional)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/products/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["products", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "product-uuid-here",
+									"description": "Product UUID"
+								}
+							]
+						},
+						"description": "Update a product (Admin only)"
+					}
+				},
+				{
+					"name": "Delete Product",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/products/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["products", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "product-uuid-here",
+									"description": "Product UUID"
+								}
+							]
+						},
+						"description": "Delete a product (Admin only)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Categories",
+			"item": [
+				{
+					"name": "Get All Categories",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/categories",
+							"host": ["{{baseUrl}}"],
+							"path": ["categories"]
+						},
+						"description": "Get all categories (Public)"
+					}
+				},
+				{
+					"name": "Get Category by ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/categories/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["categories", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "category-uuid-here",
+									"description": "Category UUID"
+								}
+							]
+						},
+						"description": "Get a category by ID (Public)"
+					}
+				},
+				{
+					"name": "Create Category",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Electronics\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/categories",
+							"host": ["{{baseUrl}}"],
+							"path": ["categories"]
+						},
+						"description": "Create a category (Admin only)"
+					}
+				},
+				{
+					"name": "Update Category",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Category Name\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/categories/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["categories", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "category-uuid-here",
+									"description": "Category UUID"
+								}
+							]
+						},
+						"description": "Update a category (Admin only)"
+					}
+				},
+				{
+					"name": "Delete Category",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/categories/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["categories", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "category-uuid-here",
+									"description": "Category UUID"
+								}
+							]
+						},
+						"description": "Delete a category (Admin only)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Cart",
+			"item": [
+				{
+					"name": "Get User Cart",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cart",
+							"host": ["{{baseUrl}}"],
+							"path": ["cart"]
+						},
+						"description": "Get user cart (Authenticated)"
+					}
+				},
+				{
+					"name": "Add Item to Cart",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productId\": \"product-uuid-here\",\n  \"size\": \"M\",\n  \"quantity\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cart/items",
+							"host": ["{{baseUrl}}"],
+							"path": ["cart", "items"]
+						},
+						"description": "Add item to cart (Authenticated)"
+					}
+				},
+				{
+					"name": "Update Cart Item",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quantity\": 2\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cart/items/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["cart", "items", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cart-item-uuid-here",
+									"description": "Cart Item UUID"
+								}
+							]
+						},
+						"description": "Update cart item quantity (Authenticated)"
+					}
+				},
+				{
+					"name": "Remove Item from Cart",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cart/items/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["cart", "items", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cart-item-uuid-here",
+									"description": "Cart Item UUID"
+								}
+							]
+						},
+						"description": "Remove item from cart (Authenticated)"
+					}
+				},
+				{
+					"name": "Clear Cart",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cart/clear",
+							"host": ["{{baseUrl}}"],
+							"path": ["cart", "clear"]
+						},
+						"description": "Clear all cart items (Authenticated)"
+					}
+				},
+				{
+					"name": "Get All Carts (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cart/admin/all",
+							"host": ["{{baseUrl}}"],
+							"path": ["cart", "admin", "all"]
+						},
+						"description": "Get all carts (Admin only)"
+					}
+				},
+				{
+					"name": "Get Cart by ID (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cart/admin/:cartId",
+							"host": ["{{baseUrl}}"],
+							"path": ["cart", "admin", ":cartId"],
+							"variable": [
+								{
+									"key": "cartId",
+									"value": "cart-uuid-here",
+									"description": "Cart UUID"
+								}
+							]
+						},
+						"description": "Get cart by ID (Admin only)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Create Order from Cart",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cartId\": \"cart-uuid-here\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders/from-cart",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders", "from-cart"]
+						},
+						"description": "Create order from cart (Admin only)"
+					}
+				},
+				{
+					"name": "Get All Orders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders"]
+						},
+						"description": "Get all orders (Admin only)"
+					}
+				},
+				{
+					"name": "Get Order by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/orders/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "order-uuid-here",
+									"description": "Order UUID"
+								}
+							]
+						},
+						"description": "Get order by ID (Admin only)"
+					}
+				}
+			]
+		},
+		{
+			"name": "News",
+			"item": [
+				{
+					"name": "Get Active News",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/news/active",
+							"host": ["{{baseUrl}}"],
+							"path": ["news", "active"]
+						},
+						"description": "Get active news items (for news bar) - Public"
+					}
+				},
+				{
+					"name": "Get All News",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/news?includeInactive=false",
+							"host": ["{{baseUrl}}"],
+							"path": ["news"],
+							"query": [
+								{
+									"key": "includeInactive",
+									"value": "false",
+									"description": "Include inactive news items"
+								}
+							]
+						},
+						"description": "Get all news items (Public)"
+					}
+				},
+				{
+					"name": "Get News by ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/news/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["news", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "news-uuid-here",
+									"description": "News UUID"
+								}
+							]
+						},
+						"description": "Get news item by ID (Public)"
+					}
+				},
+				{
+					"name": "Create News",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"New Collection Arrived!\",\n  \"content\": \"Check out our latest collection of products\",\n  \"link\": \"https://example.com/news/collection-2024\",\n  \"isActive\": true,\n  \"order\": 0\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/news",
+							"host": ["{{baseUrl}}"],
+							"path": ["news"]
+						},
+						"description": "Create a news item (Admin only)"
+					}
+				},
+				{
+					"name": "Update News",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated News Title\",\n  \"content\": \"Updated content\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/news/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["news", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "news-uuid-here",
+									"description": "News UUID"
+								}
+							]
+						},
+						"description": "Update a news item (Admin only)"
+					}
+				},
+				{
+					"name": "Toggle News Active Status",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/news/:id/toggle-active",
+							"host": ["{{baseUrl}}"],
+							"path": ["news", ":id", "toggle-active"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "news-uuid-here",
+									"description": "News UUID"
+								}
+							]
+						},
+						"description": "Toggle news item active status (Admin only)"
+					}
+				},
+				{
+					"name": "Delete News",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/news/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["news", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "news-uuid-here",
+									"description": "News UUID"
+								}
+							]
+						},
+						"description": "Delete a news item (Admin only)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Promotions",
+			"item": [
+				{
+					"name": "Get Active Promotions",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/promotions/active",
+							"host": ["{{baseUrl}}"],
+							"path": ["promotions", "active"]
+						},
+						"description": "Get active promotions (Public)"
+					}
+				},
+				{
+					"name": "Get All Promotions",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/promotions?includeInactive=false",
+							"host": ["{{baseUrl}}"],
+							"path": ["promotions"],
+							"query": [
+								{
+									"key": "includeInactive",
+									"value": "false",
+									"description": "Include inactive promotions"
+								}
+							]
+						},
+						"description": "Get all promotions (Public)"
+					}
+				},
+				{
+					"name": "Get Promotion by ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/promotions/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["promotions", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "promotion-uuid-here",
+									"description": "Promotion UUID"
+								}
+							]
+						},
+						"description": "Get promotion by ID (Public)"
+					}
+				},
+				{
+					"name": "Create Promotion",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Summer Sale 2024\",\n  \"imageUrl\": \"https://example.com/promotion-banner.jpg\",\n  \"description\": \"Get up to 50% off on all summer items\",\n  \"appearanceDate\": \"2024-06-01T00:00:00Z\",\n  \"closeDate\": \"2024-08-31T23:59:59Z\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/promotions",
+							"host": ["{{baseUrl}}"],
+							"path": ["promotions"]
+						},
+						"description": "Create a promotion (Admin only)"
+					}
+				},
+				{
+					"name": "Update Promotion",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Promotion Title\",\n  \"description\": \"Updated description\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/promotions/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["promotions", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "promotion-uuid-here",
+									"description": "Promotion UUID"
+								}
+							]
+						},
+						"description": "Update a promotion (Admin only)"
+					}
+				},
+				{
+					"name": "Toggle Promotion Active Status",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/promotions/:id/toggle-active",
+							"host": ["{{baseUrl}}"],
+							"path": ["promotions", ":id", "toggle-active"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "promotion-uuid-here",
+									"description": "Promotion UUID"
+								}
+							]
+						},
+						"description": "Toggle promotion active status (Admin only)"
+					}
+				},
+				{
+					"name": "Delete Promotion",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/promotions/:id",
+							"host": ["{{baseUrl}}"],
+							"path": ["promotions", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "promotion-uuid-here",
+									"description": "Promotion UUID"
+								}
+							]
+						},
+						"description": "Delete a promotion (Admin only)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Dashboard",
+			"item": [
+				{
+					"name": "Get Dashboard Stats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/dashboard/stats",
+							"host": ["{{baseUrl}}"],
+							"path": ["dashboard", "stats"]
+						},
+						"description": "Get dashboard statistics (Admin only)"
+					}
+				},
+				{
+					"name": "Get Overview Counts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/dashboard/overview",
+							"host": ["{{baseUrl}}"],
+							"path": ["dashboard", "overview"]
+						},
+						"description": "Get overview counts (Admin only)"
+					}
+				},
+				{
+					"name": "Get Products by Category",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/dashboard/products/by-category",
+							"host": ["{{baseUrl}}"],
+							"path": ["dashboard", "products", "by-category"]
+						},
+						"description": "Get products count by category (Admin only)"
+					}
+				},
+				{
+					"name": "Get Recent Activity",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/dashboard/recent-activity",
+							"host": ["{{baseUrl}}"],
+							"path": ["dashboard", "recent-activity"]
+						},
+						"description": "Get recent activity (Admin only)"
+					}
+				},
+				{
+					"name": "Get Cart Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/dashboard/cart-statistics",
+							"host": ["{{baseUrl}}"],
+							"path": ["dashboard", "cart-statistics"]
+						},
+						"description": "Get cart statistics (Admin only)"
+					}
+				}
+			]
+		},
+		{
+			"name": "App Config",
+			"item": [
+				{
+					"name": "Get About Us",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/app-config/about-us",
+							"host": ["{{baseUrl}}"],
+							"path": ["app-config", "about-us"]
+						},
+						"description": "Get About Us page content (Public)"
+					}
+				},
+				{
+					"name": "Update About Us",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"aboutUs\": \"We are a leading e-commerce platform dedicated to providing the best products and services to our customers.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/app-config/about-us",
+							"host": ["{{baseUrl}}"],
+							"path": ["app-config", "about-us"]
+						},
+						"description": "Update About Us page content (Admin only)"
+					}
+				},
+				{
+					"name": "Get App Config",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/app-config",
+							"host": ["{{baseUrl}}"],
+							"path": ["app-config"]
+						},
+						"description": "Get app configuration (Admin only)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["users"]
+						},
+						"description": "Get all users (Admin only)"
+					}
+				}
+			]
+		}
+	]
+}
