@@ -19,6 +19,7 @@ model User {
   mobileNumber String
   role         Role     @default(USER)
   cart         Cart?
+  orders       Order[]
   createdAt    DateTime @default(now())
 
   @@map("users")
@@ -47,6 +48,7 @@ model Product {
   sizes       ProductSize[]
   colors      ProductColor[]
   cartItems   CartItem[]
+  orderItems  OrderItem[]
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
@@ -94,6 +96,7 @@ model Cart {
   userId    String     @unique
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     CartItem[]
+  orders    Order[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
@@ -130,3 +133,52 @@ model Promotion {
   @@map("promotions")
 }
 
+model News {
+  id        String   @id @default(uuid())
+  title     String
+  content   String?  @db.Text
+  link      String?
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("news")
+}
+
+model AppConfig {
+  id        String   @id @default("app-config")
+  aboutUs   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("app_config")
+}
+model Order {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cartId      String?
+  cart        Cart?       @relation(fields: [cartId], references: [id], onDelete: SetNull)
+  totalAmount Float
+  status      String      @default("pending")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  items       OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size        String?
+  quantity    Int      @default(1)
+  price       Float
+  createdAt   DateTime @default(now())
+
+  @@map("order_items")
+}

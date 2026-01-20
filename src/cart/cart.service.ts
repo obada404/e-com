@@ -232,5 +232,72 @@ export class CartService {
       where: { cartId: cart.id },
     });
   }
+
+  // Admin methods
+  async getCartById(cartId: string) {
+    const cart = await this.prisma.cart.findUnique({
+      where: { id: cartId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            mobileNumber: true,
+          },
+        },
+        items: {
+          include: {
+            product: {
+              include: {
+                category: true,
+                sizes: true,
+                colors: true,
+                images: {
+                  orderBy: { order: 'asc' },
+                  take: 1,
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!cart) {
+      throw new NotFoundException(`Cart with ID ${cartId} not found`);
+    }
+
+    return cart;
+  }
+
+  async getAllCarts() {
+    return this.prisma.cart.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            mobileNumber: true,
+          },
+        },
+        items: {
+          include: {
+            product: {
+              include: {
+                category: true,
+                sizes: true,
+                colors: true,
+                images: {
+                  orderBy: { order: 'asc' },
+                  take: 1,
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
 }
 

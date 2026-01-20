@@ -6,6 +6,9 @@ import { CategoriesModule } from './categories/categories.module';
 import { CartModule } from './cart/cart.module';
 import { PromotionsModule } from './promotions/promotions.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { NewsModule } from './news/news.module';
+import { AppConfigModule } from './app-config/app-config.module';
+import { OrdersModule } from './orders/orders.module';
 import { PrismaService } from './prisma/prisma.service';
 
 @Module({
@@ -17,6 +20,9 @@ import { PrismaService } from './prisma/prisma.service';
     CartModule,
     PromotionsModule,
     DashboardModule,
+    NewsModule,
+    AppConfigModule,
+    OrdersModule,
   ],
   providers: [PrismaService],
 })

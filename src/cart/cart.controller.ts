@@ -18,6 +18,9 @@ import { CartService } from './cart.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { Role } from '@prisma/client';
 import { GetUser } from '../common/decorators/get-user.decorator';
 
 @ApiTags('cart')
@@ -73,6 +76,25 @@ export class CartController {
   @ApiOperation({ summary: 'Clear all cart items' })
   async clearCart(@GetUser() user: { id: string }) {
     return this.cartService.clearCart(user.id);
+  }
+
+  // Admin endpoints
+  @Get('admin/all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all carts (Admin only)' })
+  async getAllCarts() {
+    return this.cartService.getAllCarts();
+  }
+
+  @Get('admin/:cartId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get cart by ID (Admin only)' })
+  async getCartById(@Param('cartId', ParseUUIDPipe) cartId: string) {
+    return this.cartService.getCartById(cartId);
   }
 }
 
