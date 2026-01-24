@@ -23,6 +23,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: ecommerce-api
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql://user:password@postgres:5432/ecommerce?schema=public
       JWT_SECRET: your-secret-key-change-this-in-production
