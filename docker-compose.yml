@@ -36,7 +36,7 @@ services:
         condition: service_healthy
     networks:
       - ecommerce-network
-    command: sh -c "npx prisma generate && npx prisma db push --accept-data-loss && node dist/main.js"
+    command: sh -c "npx prisma generate && npx prisma db push --accept-data-loss && node dist/src/main.js"
 
 volumes:
   postgres_data:

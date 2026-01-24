@@ -11,6 +11,7 @@ COPY . .
 
 RUN npx prisma generate
 RUN npm run build
+RUN ls -la dist/ || (echo "Build failed - dist folder not found" && exit 1)
 
 FROM node:20-slim
 
