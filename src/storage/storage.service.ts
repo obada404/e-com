@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import * as crypto from 'crypto';
+import axios from 'axios';
 
 @Injectable()
 export class StorageService {
@@ -88,6 +89,85 @@ export class StorageService {
   }
 
   /**
+   * Download an image from a URL and upload it to R2 storage
+   * @param imageUrl - The URL of the image to download
+   * @param folder - Optional folder path (e.g., 'products')
+   * @returns The public URL of the uploaded file in R2
+   */
+  async uploadImageFromUrl(
+    imageUrl: string,
+    folder: string = 'products',
+  ): Promise<string> {
+    try {
+      // Download the image from the URL
+      const response = await axios.get(imageUrl, {
+        responseType: 'arraybuffer',
+        timeout: 30000, // 30 seconds timeout
+        maxContentLength: 10 * 1024 * 1024, // 10MB max file size
+        validateStatus: (status) => status === 200,
+      });
+
+      // Get the content type from the response headers
+      const contentType = response.headers['content-type'] || 'image/jpeg';
+      
+      // Extract filename from URL or generate one
+      let filename = 'image';
+      try {
+        const urlPath = new URL(imageUrl).pathname;
+        const urlFilename = urlPath.split('/').pop() || 'image';
+        // Remove query parameters if any
+        filename = urlFilename.split('?')[0];
+        // If no extension, try to infer from content type
+        if (!filename.includes('.')) {
+          const extension = this.getExtensionFromContentType(contentType);
+          filename = `${filename}.${extension}`;
+        }
+      } catch (error) {
+        // If URL parsing fails, use content type to determine extension
+        const extension = this.getExtensionFromContentType(contentType);
+        filename = `image.${extension}`;
+      }
+
+      // Convert arraybuffer to Buffer
+      const imageBuffer = Buffer.from(response.data);
+
+      // Upload to R2
+      return await this.uploadFile(imageBuffer, filename, folder);
+    } catch (error) {
+      if (error.response) {
+        throw new Error(
+          `Failed to download image from URL: HTTP ${error.response.status} ${error.response.statusText || ''}`,
+        );
+      } else if (error.request) {
+        throw new Error(
+          `Failed to download image from URL: No response received. ${error.message}`,
+        );
+      } else {
+        throw new Error(
+          `Failed to download image from URL: ${error.message}`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Upload multiple images from URLs to R2 storage
+   * @param imageUrls - Array of image URLs to download and upload
+   * @param folder - Optional folder path
+   * @returns Array of public URLs in R2
+   */
+  async uploadImagesFromUrls(
+    imageUrls: string[],
+    folder: string = 'products',
+  ): Promise<string[]> {
+    const uploadPromises = imageUrls.map((url) =>
+      this.uploadImageFromUrl(url, folder),
+    );
+
+    return Promise.all(uploadPromises);
+  }
+
+  /**
    * Get content type based on file extension
    */
   private getContentType(extension: string): string {
@@ -101,5 +181,21 @@ export class StorageService {
     };
 
     return contentTypes[extension.toLowerCase()] || 'application/octet-stream';
+  }
+
+  /**
+   * Get file extension from content type
+   */
+  private getExtensionFromContentType(contentType: string): string {
+    const contentTypes: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/jpg': 'jpg',
+      'image/png': 'png',
+      'image/gif': 'gif',
+      'image/webp': 'webp',
+      'image/svg+xml': 'svg',
+    };
+
+    return contentTypes[contentType.toLowerCase()] || 'jpg';
   }
 }

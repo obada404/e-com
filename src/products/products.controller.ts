@@ -18,7 +18,7 @@ import {
 } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
-import { CreateProductDto } from './dto/create-product.dto';
+import { CreateProductWithFilesDto } from './dto/create-product-with-files.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @ApiTags('products')
@@ -27,7 +27,10 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) { }
 
   @Post()
-  @ApiOperation({ summary: 'Create a product' })
+  @ApiOperation({ 
+    summary: 'Create a product with file uploads',
+    description: 'Upload product images as files. Images will be uploaded directly to R2 storage.'
+  })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FilesInterceptor('images', 10))
   @ApiBody({
@@ -51,14 +54,14 @@ export class ProductsController {
         images: {
           type: 'array',
           items: { type: 'string', format: 'binary' },
-          description: 'Product images (max 10)',
+          description: 'Product images (max 10 files)',
         },
       },
       required: ['title', 'name', 'quantity', 'categoryId'],
     },
   })
   create(
-    @Body() createProductDto: CreateProductDto,
+    @Body() createProductDto: CreateProductWithFilesDto,
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
     return this.productsService.create(createProductDto, files);
@@ -101,7 +104,7 @@ export class ProductsController {
         images: {
           type: 'array',
           items: { type: 'string', format: 'binary' },
-          description: 'Product images (max 10)',
+          description: 'Product images (max 10 files)',
         },
       },
     },

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
-import { CreateProductDto } from './dto/create-product.dto';
+import { CreateProductWithFilesDto } from './dto/create-product-with-files.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
@@ -11,33 +11,21 @@ export class ProductsService {
     private storageService: StorageService,
   ) { }
 
+  /**
+   * Create product with file uploads
+   * Files will be uploaded directly to R2 storage
+   */
   async create(
-    createProductDto: CreateProductDto,
+    createProductDto: CreateProductWithFilesDto,
     files?: Express.Multer.File[],
   ) {
-    const category = await this.prisma.category.findUnique({
-      where: { id: createProductDto.categoryId },
-    });
+    await this.validateCategory(createProductDto.categoryId);
 
-    if (!category) {
-      throw new NotFoundException(
-        `Category with ID ${createProductDto.categoryId} not found`,
-      );
-    }
+    // Parse JSON strings from form-data
+    const sizes = this.parseJsonField(createProductDto.sizes);
+    const colors = this.parseJsonField(createProductDto.colors);
 
-    // Parse sizes if it's a string (from multipart/form-data)
-    let sizes = createProductDto.sizes;
-    if (typeof sizes === 'string') {
-      try {
-        sizes = JSON.parse(sizes);
-      } catch (error) {
-        throw new Error('Invalid sizes format. Expected JSON array.');
-      }
-    }
-
-    const { images, ...productData } = createProductDto;
-
-    // Upload files to R2 if provided
+    // Upload files directly to R2
     let imageUrls: Array<{ url: string; alt?: string; order: number }> = [];
     if (files && files.length > 0) {
       const uploadedUrls = await this.storageService.uploadFiles(files);
@@ -46,35 +34,97 @@ export class ProductsService {
         alt: `Product image ${index + 1}`,
         order: index,
       }));
-    } else if (images && images.length > 0) {
-      // Fallback to provided URLs if no files uploaded
-      imageUrls = images.map((img, index) => ({
-        url: img.url,
-        alt: img.alt || `Product image ${index + 1}`,
-        order: img.order ?? index,
-      }));
     }
+
+    const { sizes: _, colors: __, ...productData } = createProductDto;
+
+    return this.createProductInDatabase({
+      ...productData,
+      sizes,
+      colors,
+      imageUrls,
+    });
+  }
+
+  /**
+   * Validate category exists
+   */
+  private async validateCategory(categoryId: string) {
+    const category = await this.prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+
+    if (!category) {
+      throw new NotFoundException(
+        `Category with ID ${categoryId} not found`,
+      );
+    }
+  }
+
+  /**
+   * Parse JSON string field from form-data
+   */
+  private parseJsonField(field?: string): any {
+    if (!field) return undefined;
+    try {
+      return JSON.parse(field);
+    } catch {
+      throw new Error(`Invalid JSON format for field`);
+    }
+  }
+
+  /**
+   * Create product in database with all related data
+   */
+  private async createProductInDatabase(data: {
+    title: string;
+    name: string;
+    description?: string;
+    note?: string;
+    quantity: number;
+    categoryId: string;
+    sizes?: Array<{ size: string; price: number }>;
+    colors?: Array<{ color: string }>;
+    imageUrls: Array<{ url: string; alt?: string; order: number }>;
+  }) {
+    const sizesData = data.sizes
+      ? data.sizes.map((size) => ({
+          size: String(size.size),
+          price: Number(size.price),
+        }))
+      : undefined;
+
+    const colorsData = data.colors
+      ? data.colors.map((color) => ({
+          color: String(color.color),
+        }))
+      : undefined;
 
     return this.prisma.product.create({
       data: {
-        title: productData.title,
-        name: productData.name,
-        description: productData.description,
-        note: productData.note,
-        quantity: productData.quantity,
-        categoryId: productData.categoryId,
-        soldOut: productData.quantity === 0,
-        sizes: sizes
+        title: data.title,
+        name: data.name,
+        description: data.description,
+        note: data.note,
+        quantity: data.quantity,
+        categoryId: data.categoryId,
+        soldOut: data.quantity === 0,
+        sizes: sizesData
           ? {
-            create: sizes,
-          }
+              create: sizesData,
+            }
           : undefined,
-        images: imageUrls.length > 0
+        colors: colorsData
           ? {
-            create: imageUrls,
-          }
+              create: colorsData,
+            }
           : undefined,
-      } as any,
+        images: data.imageUrls.length > 0
+          ? {
+              create: data.imageUrls,
+            }
+          : undefined,
+      },
       include: {
         category: true,
         sizes: {
@@ -83,6 +133,7 @@ export class ProductsService {
         images: {
           orderBy: { order: 'asc' },
         },
+        colors: true,
       },
     });
   }
@@ -147,17 +198,15 @@ export class ProductsService {
       }
     }
 
-    // Parse sizes if it's a string (from multipart/form-data)
-    let sizes = updateProductDto.sizes;
-    if (sizes && typeof sizes === 'string') {
-      try {
-        sizes = JSON.parse(sizes);
-      } catch (error) {
-        throw new Error('Invalid sizes format. Expected JSON array.');
-      }
-    }
+    // Parse JSON strings from form-data
+    const sizes = updateProductDto.sizes
+      ? this.parseJsonField(updateProductDto.sizes)
+      : undefined;
+    const colors = updateProductDto.colors
+      ? this.parseJsonField(updateProductDto.colors)
+      : undefined;
 
-    const { images, ...productData } = updateProductDto;
+    const { sizes: _, colors: __, ...productData } = updateProductDto;
 
     // Upload files to R2 if provided
     let imageUrls: Array<{ url: string; alt?: string; order: number }> | undefined;
@@ -167,13 +216,6 @@ export class ProductsService {
         url,
         alt: `Product image ${index + 1}`,
         order: index,
-      }));
-    } else if (images && images.length > 0) {
-      // Fallback to provided URLs if no files uploaded
-      imageUrls = images.map((img, index) => ({
-        url: img.url,
-        alt: img.alt || `Product image ${index + 1}`,
-        order: img.order ?? index,
       }));
     }
 
@@ -197,9 +239,23 @@ export class ProductsService {
     if (productData.categoryId !== undefined) updateData.categoryId = productData.categoryId;
 
     if (sizes) {
+      const sizesData = sizes.map((size: any) => ({
+        size: String(size.size),
+        price: Number(size.price),
+      }));
       updateData.sizes = {
         deleteMany: {},
-        create: sizes,
+        create: sizesData,
+      };
+    }
+
+    if (colors) {
+      const colorsData = colors.map((color: any) => ({
+        color: String(color.color),
+      }));
+      updateData.colors = {
+        deleteMany: {},
+        create: colorsData,
       };
     }
 
