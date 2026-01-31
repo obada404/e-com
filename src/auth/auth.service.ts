@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
+import { LoginByMobileDto } from './dto/login-by-mobile.dto';
 
 @Injectable()
 export class AuthService {
@@ -14,20 +15,25 @@ export class AuthService {
 
   async signup(signupDto: SignupDto) {
     const existingUser = await this.prisma.user.findUnique({
-      where: { email: signupDto.email },
+      where: { mobileNumber: signupDto.mobileNumber },
     });
 
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+      throw new ConflictException('Mobile number already registered');
     }
 
-    const hashedPassword = await bcrypt.hash(signupDto.password, 10);
+    // Email and password kept in DB but not used for auth; store placeholders
+    const placeholderEmail = `mobile_${signupDto.mobileNumber.replace(/\D/g, '')}@placeholder.local`;
+    const placeholderPassword = await bcrypt.hash(
+      `placeholder_${signupDto.mobileNumber}_${Date.now()}`,
+      10,
+    );
 
     const user = await this.prisma.user.create({
       data: {
-        email: signupDto.email,
-        password: hashedPassword,
         mobileNumber: signupDto.mobileNumber,
+        email: placeholderEmail,
+        password: placeholderPassword,
       },
     });
 
@@ -57,7 +63,21 @@ export class AuthService {
       isAdmin: user.role === 'ADMIN',
     };
   }
+
+  async loginByMobile(loginByMobileDto: LoginByMobileDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { mobileNumber: loginByMobileDto.mobileNumber },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('No account found for this mobile number');
+    }
+
+    const payload = { sub: user.id, mobileNumber: user.mobileNumber, role: user.role };
+
+    return {
+      accessToken: this.jwtService.sign(payload),
+      isAdmin: user.role === 'ADMIN',
+    };
+  }
 }
-
-
-

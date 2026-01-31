@@ -1,7 +1,7 @@
 import { IsString, IsNotEmpty, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class SignupDto {
+export class LoginByMobileDto {
   @ApiProperty({ example: '+1234567890' })
   @IsString()
   @IsNotEmpty()

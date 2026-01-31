@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import * as crypto from 'crypto';
 import axios from 'axios';
@@ -165,6 +165,34 @@ export class StorageService {
     );
 
     return Promise.all(uploadPromises);
+  }
+
+  /**
+   * Delete a file from R2 by its public URL.
+   * Extracts the object key from the URL (path after publicUrlBase).
+   */
+  async deleteByUrl(url: string): Promise<void> {
+    const base = this.publicUrlBase.replace(/\/$/, '');
+    if (!url.startsWith(base)) {
+      throw new Error(`URL does not belong to this R2 bucket: ${url}`);
+    }
+    const key = url.slice(base.length).replace(/^\//, '');
+    if (!key) {
+      throw new Error('Could not extract object key from URL');
+    }
+    await this.s3Client.send(
+      new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
+    );
+  }
+
+  /**
+   * Delete multiple files from R2 by their public URLs.
+   * Ignores URLs that don't belong to this bucket or fail to delete.
+   */
+  async deleteByUrls(urls: string[]): Promise<void> {
+    await Promise.allSettled(
+      urls.map((url) => this.deleteByUrl(url).catch(() => {})),
+    );
   }
 
   /**

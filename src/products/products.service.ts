@@ -208,11 +208,20 @@ export class ProductsService {
 
     const { sizes: _, colors: __, ...productData } = updateProductDto;
 
-    // Upload files to R2 if provided
-    let imageUrls: Array<{ url: string; alt?: string; order: number }> | undefined;
+    // When new files are provided: replace all images (delete from DB + R2, then upload new)
+    let newImages: Array<{ url: string; alt?: string; order: number }> | undefined;
     if (files && files.length > 0) {
+      const existingImages = await this.prisma.productImage.findMany({
+        where: { productId: id },
+        select: { url: true },
+      });
+      const existingUrls = existingImages.map((img) => img.url);
+      await this.prisma.productImage.deleteMany({ where: { productId: id } });
+      if (existingUrls.length > 0) {
+        await this.storageService.deleteByUrls(existingUrls);
+      }
       const uploadedUrls = await this.storageService.uploadFiles(files);
-      imageUrls = uploadedUrls.map((url, index) => ({
+      newImages = uploadedUrls.map((url, index) => ({
         url,
         alt: `Product image ${index + 1}`,
         order: index,
@@ -259,10 +268,9 @@ export class ProductsService {
       };
     }
 
-    if (imageUrls) {
+    if (newImages) {
       updateData.images = {
-        deleteMany: {},
-        create: imageUrls,
+        create: newImages,
       };
     }
 

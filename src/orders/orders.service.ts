@@ -77,6 +77,11 @@ export class OrdersService {
       },
     });
 
+    // Clear cart items after order created (keep cart so user can add new items)
+    await this.prisma.cartItem.deleteMany({
+      where: { cartId: cart.id },
+    });
+
     return order;
   }
 

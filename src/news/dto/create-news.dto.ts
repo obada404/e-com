@@ -27,8 +27,8 @@ export class CreateNewsDto {
         example: 'https://example.com/news/collection-2024',
         required: false,
     })
-    @IsUrl()
     @IsOptional()
+    @IsUrl({}, { message: 'Link must be a valid URL' })
     link?: string;
 
     @ApiProperty({ example: true, required: false, default: true })
