@@ -5,8 +5,10 @@ import {
   Min,
   IsOptional,
   IsInt,
+  IsEnum,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { ProductType } from '@prisma/client';
 
 export class CreateProductWithFilesDto {
   @ApiProperty({ example: 'Premium Laptop Computer' })
@@ -59,4 +61,13 @@ export class CreateProductWithFilesDto {
   @IsString()
   @IsOptional()
   colors?: string;
+
+  @ApiProperty({
+    enum: ProductType,
+    description: 'Product type: STANDALONE (default, directly purchasable) or VARIANT_BASED (base + variants)',
+    required: false,
+  })
+  @IsEnum(ProductType)
+  @IsOptional()
+  productType?: ProductType;
 }

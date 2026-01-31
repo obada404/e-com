@@ -7,10 +7,15 @@ export class AddToCartDto {
   @IsNotEmpty()
   productId: string;
 
-  @ApiProperty({ example: 'M', required: false })
+  @ApiProperty({ example: 'M', description: 'Required for standalone products', required: false })
   @IsString()
   @IsOptional()
   size?: string;
+
+  @ApiProperty({ example: 'Red', description: 'Optional; used with standalone when product has colors', required: false })
+  @IsString()
+  @IsOptional()
+  color?: string;
 
   @ApiProperty({ example: 1 })
   @IsInt()

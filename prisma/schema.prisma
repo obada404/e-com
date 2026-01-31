@@ -12,6 +12,16 @@ enum Role {
   USER
 }
 
+enum ProductType {
+  STANDALONE
+  VARIANT_BASED
+}
+
+enum ProductRecordType {
+  BASE_PRODUCT
+  VARIANT
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -35,22 +45,30 @@ model Category {
 }
 
 model Product {
-  id          String         @id @default(uuid())
-  title       String
-  name        String
-  description String?        @db.Text
-  note        String?        @db.Text
-  quantity    Int            @default(0)
-  soldOut     Boolean        @default(false)
-  categoryId  String
-  category    Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  images      ProductImage[]
-  sizes       ProductSize[]
-  colors      ProductColor[]
-  cartItems   CartItem[]
-  orderItems  OrderItem[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id               String            @id @default(uuid())
+  title            String
+  name             String
+  description      String?           @db.Text
+  note             String?           @db.Text
+  quantity         Int               @default(0)
+  soldOut          Boolean           @default(false)
+  categoryId       String
+  category         Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  productType      ProductType       @default(STANDALONE)
+  recordType       ProductRecordType @default(BASE_PRODUCT)
+  parentProductId  String?
+  parentProduct    Product?          @relation("ProductVariants", fields: [parentProductId], references: [id], onDelete: Cascade)
+  variants         Product[]         @relation("ProductVariants")
+  price            Float?            // Variant: price for this specific combination
+  size             String?           // Variant: selected size (from product template)
+  color            String?           // Variant: selected color (from product template)
+  images           ProductImage[]
+  sizes            ProductSize[]
+  colors           ProductColor[]
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   @@map("products")
 }

@@ -19,6 +19,7 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ProductsService } from './products.service';
 import { CreateProductWithFilesDto } from './dto/create-product-with-files.dto';
+import { CreateVariantDto } from './dto/create-variant.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @ApiTags('products')
@@ -77,6 +78,42 @@ export class ProductsController {
   @ApiOperation({ summary: 'Get a product by ID' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.productsService.findOne(id);
+  }
+
+  @Post(':id/variants')
+  @ApiOperation({ summary: 'Create a variant for a VARIANT_BASED product' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FilesInterceptor('images', 10))
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        name: { type: 'string' },
+        size: { type: 'string' },
+        color: { type: 'string' },
+        description: { type: 'string' },
+        note: { type: 'string' },
+        quantity: { type: 'number' },
+        price: { type: 'number' },
+        images: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+      },
+      required: ['title', 'name', 'size', 'quantity', 'price'],
+    },
+  })
+  createVariant(
+    @Param('id', ParseUUIDPipe) parentProductId: string,
+    @Body() createVariantDto: CreateVariantDto,
+    @UploadedFiles() files?: Express.Multer.File[],
+  ) {
+    return this.productsService.createVariant(
+      parentProductId,
+      createVariantDto,
+      files,
+    );
   }
 
   @Patch(':id')

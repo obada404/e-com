@@ -1,7 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { ProductType, ProductRecordType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import { ProductTypeService } from '../product-type/product-type.service';
 import { CreateProductWithFilesDto } from './dto/create-product-with-files.dto';
+import { CreateVariantDto } from './dto/create-variant.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
@@ -9,7 +16,8 @@ export class ProductsService {
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
-  ) { }
+    private productTypeService: ProductTypeService,
+  ) {}
 
   /**
    * Create product with file uploads
@@ -20,6 +28,22 @@ export class ProductsService {
     files?: Express.Multer.File[],
   ) {
     await this.validateCategory(createProductDto.categoryId);
+
+    const productType = createProductDto.productType ?? ProductType.STANDALONE;
+
+    if (productType === ProductType.STANDALONE) {
+      this.productTypeService.validateStandaloneCreate({
+        productType,
+        recordType: ProductRecordType.BASE_PRODUCT,
+        parentProductId: null,
+      });
+    } else {
+      this.productTypeService.validateVariantBasedBaseCreate({
+        productType,
+        recordType: ProductRecordType.BASE_PRODUCT,
+        parentProductId: null,
+      });
+    }
 
     // Parse JSON strings from form-data
     const sizes = this.parseJsonField(createProductDto.sizes);
@@ -36,13 +60,14 @@ export class ProductsService {
       }));
     }
 
-    const { sizes: _, colors: __, ...productData } = createProductDto;
+    const { sizes: _, colors: __, productType: _pt, ...productData } = createProductDto;
 
     return this.createProductInDatabase({
       ...productData,
       sizes,
       colors,
       imageUrls,
+      productType,
     });
   }
 
@@ -86,6 +111,7 @@ export class ProductsService {
     sizes?: Array<{ size: string; price: number }>;
     colors?: Array<{ color: string }>;
     imageUrls: Array<{ url: string; alt?: string; order: number }>;
+    productType?: ProductType;
   }) {
     const sizesData = data.sizes
       ? data.sizes.map((size) => ({
@@ -100,6 +126,9 @@ export class ProductsService {
         }))
       : undefined;
 
+    const productType = data.productType ?? ProductType.STANDALONE;
+    const recordType = ProductRecordType.BASE_PRODUCT;
+
     return this.prisma.product.create({
       data: {
         title: data.title,
@@ -108,6 +137,8 @@ export class ProductsService {
         note: data.note,
         quantity: data.quantity,
         categoryId: data.categoryId,
+        productType,
+        recordType,
         soldOut: data.quantity === 0,
         sizes: sizesData
           ? {
@@ -140,6 +171,7 @@ export class ProductsService {
 
   async findAll() {
     return this.prisma.product.findMany({
+      where: { recordType: ProductRecordType.BASE_PRODUCT },
       include: {
         category: true,
         sizes: {
@@ -162,6 +194,12 @@ export class ProductsService {
         },
         images: {
           orderBy: { order: 'asc' },
+        },
+        variants: {
+          where: { recordType: ProductRecordType.VARIANT },
+          include: {
+            images: { orderBy: { order: 'asc' } },
+          },
         },
       },
     });
@@ -247,6 +285,22 @@ export class ProductsService {
     if (productData.quantity !== undefined) updateData.quantity = productData.quantity;
     if (productData.categoryId !== undefined) updateData.categoryId = productData.categoryId;
 
+    if (productData.productType !== undefined) {
+      if (product.parentProductId) {
+        throw new BadRequestException(
+          'Cannot change productType on a variant record. Update the base product instead.',
+        );
+      }
+      const newProductType = productData.productType;
+      const newRecordType = product.recordType;
+      await this.productTypeService.validateProductTypeConsistency(
+        id,
+        newProductType,
+        newRecordType,
+      );
+      updateData.productType = newProductType;
+    }
+
     if (sizes) {
       const sizesData = sizes.map((size: any) => ({
         size: String(size.size),
@@ -289,6 +343,165 @@ export class ProductsService {
     });
   }
 
+  /**
+   * Get or create a variant for a STANDALONE product based on user's size/color selection.
+   * Used when adding standalone product to cart.
+   */
+  async getOrCreateStandaloneVariant(
+    baseProductId: string,
+    size: string,
+    color?: string,
+  ) {
+    const baseProduct = await this.prisma.product.findUnique({
+      where: { id: baseProductId },
+      include: { sizes: true, colors: true },
+    });
+
+    if (!baseProduct) {
+      throw new NotFoundException(
+        `Product with ID ${baseProductId} not found`,
+      );
+    }
+
+    if (baseProduct.productType !== ProductType.STANDALONE) {
+      throw new BadRequestException(
+        'getOrCreateStandaloneVariant is only for STANDALONE products. Use variant ID directly for VARIANT_BASED products.',
+      );
+    }
+
+    const productSize = baseProduct.sizes.find((s) => s.size === size);
+    if (!productSize) {
+      throw new BadRequestException(
+        `Size "${size}" is not available for this product`,
+      );
+    }
+
+    if (color && baseProduct.colors.length > 0) {
+      const hasColor = baseProduct.colors.some(
+        (c) => c.color.toLowerCase() === color.toLowerCase(),
+      );
+      if (!hasColor) {
+        throw new BadRequestException(
+          `Color "${color}" is not available for this product`,
+        );
+      }
+    }
+
+    const colorValue = color || null;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let variant = await this.prisma.product.findFirst({
+      where: {
+        parentProductId: baseProductId,
+        recordType: ProductRecordType.VARIANT,
+        size,
+        color: colorValue,
+      } as any,
+      include: {
+        parentProduct: true,
+        category: true,
+        images: { orderBy: { order: 'asc' } },
+      },
+    });
+
+    if (variant) {
+      return variant;
+    }
+
+    const variantTitle = colorValue
+      ? `${baseProduct.title} - ${size} - ${colorValue}`
+      : `${baseProduct.title} - ${size}`;
+    const variantName = colorValue
+      ? `${baseProduct.name}-${size}-${colorValue}`
+      : `${baseProduct.name}-${size}`;
+
+    return this.prisma.product.create({
+      data: {
+        title: variantTitle,
+        name: variantName,
+        description: baseProduct.description,
+        note: baseProduct.note,
+        quantity: 0, // Standalone: inventory comes from base product
+        price: productSize.price,
+        size,
+        color: colorValue,
+        categoryId: baseProduct.categoryId,
+        productType: ProductType.STANDALONE,
+        recordType: ProductRecordType.VARIANT,
+        parentProductId: baseProductId,
+        soldOut: baseProduct.soldOut,
+      } as any,
+      include: {
+        parentProduct: true,
+        category: true,
+        images: { orderBy: { order: 'asc' } },
+      },
+    });
+  }
+
+  /**
+   * Create a variant record for a VARIANT_BASED base product.
+   */
+  async createVariant(
+    parentProductId: string,
+    createVariantDto: CreateVariantDto,
+    files?: Express.Multer.File[],
+  ) {
+    const parent = await this.prisma.product.findUnique({
+      where: { id: parentProductId },
+      include: { category: true },
+    });
+
+    if (!parent) {
+      throw new NotFoundException(
+        `Product with ID ${parentProductId} not found`,
+      );
+    }
+
+    await this.productTypeService.validateVariantCreate({
+      productType: parent.productType,
+      recordType: ProductRecordType.VARIANT,
+      parentProductId,
+    });
+
+    let imageUrls: Array<{ url: string; alt?: string; order: number }> = [];
+    if (files && files.length > 0) {
+      const uploadedUrls = await this.storageService.uploadFiles(files);
+      imageUrls = uploadedUrls.map((url, index) => ({
+        url,
+        alt: `Variant image ${index + 1}`,
+        order: index,
+      }));
+    }
+
+    return this.prisma.product.create({
+      data: {
+        title: createVariantDto.title,
+        name: createVariantDto.name,
+        description: createVariantDto.description,
+        note: createVariantDto.note,
+        quantity: createVariantDto.quantity,
+        price: createVariantDto.price,
+        size: createVariantDto.size,
+        color: createVariantDto.color ?? null,
+        categoryId: parent.categoryId,
+        productType: ProductType.VARIANT_BASED,
+        recordType: ProductRecordType.VARIANT,
+        parentProductId,
+        soldOut: createVariantDto.quantity === 0,
+        images:
+          imageUrls.length > 0
+            ? { create: imageUrls }
+            : undefined,
+      } as any,
+      include: {
+        category: true,
+        parentProduct: true,
+        images: { orderBy: { order: 'asc' } },
+      },
+    });
+  }
+
   async remove(id: string) {
     const product = await this.prisma.product.findUnique({
       where: { id },
@@ -296,6 +509,24 @@ export class ProductsService {
 
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+
+    if (
+      product.parentProductId &&
+      product.productType === ProductType.VARIANT_BASED
+    ) {
+      const siblingCount = await this.prisma.product.count({
+        where: {
+          parentProductId: product.parentProductId,
+          recordType: ProductRecordType.VARIANT,
+          id: { not: id },
+        },
+      });
+      if (siblingCount === 0) {
+        throw new BadRequestException(
+          'Cannot delete the last variant. Variant-based products must have at least one variant.',
+        );
+      }
     }
 
     return this.prisma.product.delete({
