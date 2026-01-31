@@ -14,7 +14,7 @@ export class AuthService {
   ) {}
 
   async signup(signupDto: SignupDto) {
-    const existingUser = await this.prisma.user.findUnique({
+    const existingUser = await this.prisma.user.findFirst({
       where: { mobileNumber: signupDto.mobileNumber },
     });
 
@@ -65,12 +65,24 @@ export class AuthService {
   }
 
   async loginByMobile(loginByMobileDto: LoginByMobileDto) {
-    const user = await this.prisma.user.findUnique({
+    let user = await this.prisma.user.findFirst({
       where: { mobileNumber: loginByMobileDto.mobileNumber },
     });
 
     if (!user) {
-      throw new UnauthorizedException('No account found for this mobile number');
+      // Sign up new user with only mobile number
+      const placeholderEmail = `mobile_${loginByMobileDto.mobileNumber.replace(/\D/g, '')}@placeholder.local`;
+      const placeholderPassword = await bcrypt.hash(
+        `placeholder_${loginByMobileDto.mobileNumber}_${Date.now()}`,
+        10,
+      );
+      user = await this.prisma.user.create({
+        data: {
+          mobileNumber: loginByMobileDto.mobileNumber,
+          email: placeholderEmail,
+          password: placeholderPassword,
+        },
+      });
     }
 
     const payload = { sub: user.id, mobileNumber: user.mobileNumber, role: user.role };

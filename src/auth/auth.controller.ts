@@ -30,13 +30,12 @@ export class AuthController {
   }
 
   @Post('login/mobile')
-  @ApiOperation({ summary: 'Login user with mobile number' })
+  @ApiOperation({ summary: 'Login or signup with mobile number (creates user if not exists)' })
   @ApiResponse({
     status: 200,
-    description: 'Login successful',
+    description: 'Login/signup successful',
     type: LoginResponseDto,
   })
-  @ApiResponse({ status: 401, description: 'No account found for this mobile number' })
   async loginByMobile(@Body() loginByMobileDto: LoginByMobileDto): Promise<LoginResponseDto> {
     return this.authService.loginByMobile(loginByMobileDto);
   }

@@ -11,11 +11,10 @@ const projectName = args[1];
 const port = args[2] || '3000';
 const branch = args.find(arg => arg.startsWith('--branch'))?.split('=')[1] || 'main';
 const email = args.find(arg => arg.startsWith('--email'))?.split('=')[1] || 'admin@example.com';
-const useSeed = args.includes('--seed');
 const useDocker = args.includes('--docker');
 
 if (!gitRepo || !projectName) {
-    console.error('Usage: node deploy-nest.js <git-repo> <project-name> <port> [--branch=<branch>] [--email=<email>] [--seed] [--docker]');
+    console.error('Usage: node deploy-nest.js <git-repo> <project-name> <port> [--branch=<branch>] [--email=<email>] [--docker]');
     process.exit(1);
 }
 
@@ -28,7 +27,6 @@ try {
     log(`Branch: ${branch}`);
     log(`Port: ${port}`);
     log(`Email: ${email}`);
-    log(`Seed: ${useSeed ? 'Yes' : 'No'}`);
     log(`Docker: ${useDocker ? 'Yes' : 'No'}`);
 
     // Ensure /var/www exists
@@ -95,17 +93,6 @@ try {
         log('Building and starting Docker containers...');
         execSync(`cd ${projectPath} && ${dockerComposeCmd} up -d --build`, { stdio: 'inherit' });
 
-        // Run seed if requested
-        if (useSeed) {
-            log('Running database seed...');
-            try {
-                execSync(`docker exec ecommerce-api npx tsx prisma/seed.ts`, { stdio: 'inherit' });
-            } catch (e) {
-                log('Warning: Seed failed. You can run it manually later.');
-                log('Manual seed command: docker exec ecommerce-api npx tsx prisma/seed.ts');
-            }
-        }
-
         log('Deployment complete!');
         log(`Application should be available at: http://localhost:${port}`);
         log('Check logs with: docker logs ecommerce-api');
@@ -125,12 +112,6 @@ try {
         // Run migrations
         log('Running database migrations...');
         execSync(`cd ${projectPath} && npx prisma migrate deploy`, { stdio: 'inherit' });
-
-        // Run seed if requested
-        if (useSeed) {
-            log('Running database seed...');
-            execSync(`cd ${projectPath} && npm run prisma:seed`, { stdio: 'inherit' });
-        }
 
         // Build application
         log('Building application...');

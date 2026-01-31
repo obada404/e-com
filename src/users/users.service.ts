@@ -7,8 +7,12 @@ export class UsersService {
 
   async findAll() {
     return this.prisma.user.findMany({
+      where: {
+        mobileNumber: { not: '' },
+      },
       select: {
         id: true,
+        mobileNumber: true,
         email: true,
         role: true,
         createdAt: true,
