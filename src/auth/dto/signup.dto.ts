@@ -1,10 +1,9 @@
-import { IsString, IsNotEmpty, Matches } from 'class-validator';
+import { IsString, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SignupDto {
-  @ApiProperty({ example: '+1234567890' })
+  @ApiProperty({ example: '+970599504676 or 0599504676' })
   @IsString()
   @IsNotEmpty()
-  @Matches(/^\+?[1-9]\d{1,14}$/, { message: 'Please provide a valid mobile number' })
   mobileNumber: string;
 }
