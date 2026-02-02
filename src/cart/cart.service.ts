@@ -97,10 +97,10 @@ export class CartService {
           `Size ${addToCartDto.size} not available for this product`,
         );
       }
-      price = productSize.price;
+      price = productSize.priceAfterDiscount;
     } else {
       if (product.sizes.length > 0) {
-        price = product.sizes[0].price;
+        price = product.sizes[0].priceAfterDiscount;
       }
     }
 

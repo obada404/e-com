@@ -45,7 +45,8 @@ export class ProductsController {
         categoryId: { type: 'string' },
         sizes: {
           type: 'string',
-          description: 'JSON array of sizes, e.g., [{"size":"S","price":29.99}]',
+          description:
+            'JSON array of sizes, e.g., [{"size":"S","priceBeforeDiscount":39.99,"priceAfterDiscount":29.99}]',
         },
         colors: {
           type: 'string',
@@ -95,7 +96,8 @@ export class ProductsController {
         categoryId: { type: 'string' },
         sizes: {
           type: 'string',
-          description: 'JSON array of sizes, e.g., [{"size":"S","price":29.99}]',
+          description:
+            'JSON array of sizes, e.g., [{"size":"S","priceBeforeDiscount":39.99,"priceAfterDiscount":29.99}]',
         },
         colors: {
           type: 'string',

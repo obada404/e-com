@@ -44,7 +44,8 @@ export class CreateProductWithFilesDto {
 
   @ApiProperty({
     type: 'string',
-    description: 'JSON array of sizes, e.g., [{"size":"S","price":29.99}]',
+    description:
+      'JSON array of sizes, e.g., [{"size":"S","priceBeforeDiscount":39.99,"priceAfterDiscount":29.99}]',
     required: false,
   })
   @IsString()

@@ -51,9 +51,9 @@ export class CreateProductDto {
   @ApiProperty({
     type: [ProductSizeDto],
     example: [
-      { size: 'S', price: 29.99 },
-      { size: 'M', price: 34.99 },
-      { size: 'L', price: 39.99 },
+      { size: 'S', priceBeforeDiscount: 39.99, priceAfterDiscount: 29.99 },
+      { size: 'M', priceBeforeDiscount: 44.99, priceAfterDiscount: 34.99 },
+      { size: 'L', priceBeforeDiscount: 49.99, priceAfterDiscount: 39.99 },
     ],
     required: false,
   })

@@ -83,14 +83,19 @@ export class ProductsService {
     note?: string;
     quantity: number;
     categoryId: string;
-    sizes?: Array<{ size: string; price: number }>;
+    sizes?: Array<{
+      size: string;
+      priceBeforeDiscount: number;
+      priceAfterDiscount: number;
+    }>;
     colors?: Array<{ color: string }>;
     imageUrls: Array<{ url: string; alt?: string; order: number }>;
   }) {
     const sizesData = data.sizes
       ? data.sizes.map((size) => ({
           size: String(size.size),
-          price: Number(size.price),
+          priceBeforeDiscount: Number(size.priceBeforeDiscount),
+          priceAfterDiscount: Number(size.priceAfterDiscount),
         }))
       : undefined;
 
@@ -111,7 +116,7 @@ export class ProductsService {
         soldOut: data.quantity === 0,
         sizes: sizesData
           ? {
-              create: sizesData,
+              create: sizesData as any,
             }
           : undefined,
         colors: colorsData
@@ -250,11 +255,12 @@ export class ProductsService {
     if (sizes) {
       const sizesData = sizes.map((size: any) => ({
         size: String(size.size),
-        price: Number(size.price),
+        priceBeforeDiscount: Number(size.priceBeforeDiscount),
+        priceAfterDiscount: Number(size.priceAfterDiscount),
       }));
       updateData.sizes = {
         deleteMany: {},
-        create: sizesData,
+        create: sizesData as any,
       };
     }
 

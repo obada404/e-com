@@ -70,7 +70,8 @@ model ProductImage {
 model ProductSize {
   id        String   @id @default(uuid())
   size      String
-  price     Float
+  priceBeforeDiscount Float
+  priceAfterDiscount  Float
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
