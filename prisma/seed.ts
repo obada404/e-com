@@ -3,6 +3,15 @@ import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
+const sizesWithDiscount = (
+  sizes: Array<{ size: string; price: number }>,
+) =>
+  sizes.map((size) => ({
+    size: size.size,
+    priceBeforeDiscount: size.price,
+    priceAfterDiscount: size.price,
+  }));
+
 async function main() {
   console.log('🌱 Starting database seeding...\n');
 
@@ -108,10 +117,10 @@ async function main() {
         ],
       },
       sizes: {
-        create: [
+        create: sizesWithDiscount([
           { size: '512GB', price: 1299.99 },
           { size: '1TB', price: 1599.99 },
-        ],
+        ]),
       },
     },
   });
@@ -135,11 +144,11 @@ async function main() {
         ],
       },
       sizes: {
-        create: [
+        create: sizesWithDiscount([
           { size: '128GB', price: 899.99 },
           { size: '256GB', price: 999.99 },
           { size: '512GB', price: 1199.99 },
-        ],
+        ]),
       },
     },
   });
@@ -163,10 +172,10 @@ async function main() {
         ],
       },
       sizes: {
-        create: [
+        create: sizesWithDiscount([
           { size: 'Standard', price: 349.99 },
           { size: 'Premium', price: 449.99 },
-        ],
+        ]),
       },
     },
   });
@@ -191,13 +200,13 @@ async function main() {
         ],
       },
       sizes: {
-        create: [
+        create: sizesWithDiscount([
           { size: 'S', price: 19.99 },
           { size: 'M', price: 19.99 },
           { size: 'L', price: 19.99 },
           { size: 'XL', price: 21.99 },
           { size: 'XXL', price: 21.99 },
-        ],
+        ]),
       },
     },
   });
@@ -221,13 +230,13 @@ async function main() {
         ],
       },
       sizes: {
-        create: [
+        create: sizesWithDiscount([
           { size: '28', price: 59.99 },
           { size: '30', price: 59.99 },
           { size: '32', price: 59.99 },
           { size: '34', price: 59.99 },
           { size: '36', price: 64.99 },
-        ],
+        ]),
       },
     },
   });
@@ -251,12 +260,12 @@ async function main() {
         ],
       },
       sizes: {
-        create: [
+        create: sizesWithDiscount([
           { size: 'S', price: 129.99 },
           { size: 'M', price: 129.99 },
           { size: 'L', price: 134.99 },
           { size: 'XL', price: 139.99 },
-        ],
+        ]),
       },
     },
   });
@@ -281,7 +290,7 @@ async function main() {
         ],
       },
       sizes: {
-        create: [{ size: '12-Cup', price: 79.99 }],
+        create: sizesWithDiscount([{ size: '12-Cup', price: 79.99 }]),
       },
     },
   });
@@ -305,11 +314,11 @@ async function main() {
         ],
       },
       sizes: {
-        create: [
+        create: sizesWithDiscount([
           { size: 'Small', price: 14.99 },
           { size: 'Medium', price: 24.99 },
           { size: 'Large', price: 34.99 },
-        ],
+        ]),
       },
     },
   });
@@ -334,10 +343,10 @@ async function main() {
         ],
       },
       sizes: {
-        create: [
+        create: sizesWithDiscount([
           { size: 'Standard', price: 39.99 },
           { size: 'Extra Long', price: 49.99 },
-        ],
+        ]),
       },
     },
   });
@@ -361,11 +370,11 @@ async function main() {
         ],
       },
       sizes: {
-        create: [
+        create: sizesWithDiscount([
           { size: '30L', price: 89.99 },
           { size: '50L', price: 119.99 },
           { size: '70L', price: 149.99 },
-        ],
+        ]),
       },
     },
   });
@@ -390,10 +399,10 @@ async function main() {
         ],
       },
       sizes: {
-        create: [
+        create: sizesWithDiscount([
           { size: 'Paperback', price: 24.99 },
           { size: 'Hardcover', price: 39.99 },
-        ],
+        ]),
       },
     },
   });
@@ -418,10 +427,10 @@ async function main() {
         ],
       },
       sizes: {
-        create: [
+        create: sizesWithDiscount([
           { size: 'Standard Edition', price: 44.99 },
           { size: 'Deluxe Edition', price: 69.99 },
-        ],
+        ]),
       },
     },
   });
@@ -445,11 +454,11 @@ async function main() {
         ],
       },
       sizes: {
-        create: [
+        create: sizesWithDiscount([
           { size: '500 Pieces', price: 19.99 },
           { size: '1000 Pieces', price: 29.99 },
           { size: '2000 Pieces', price: 39.99 },
-        ],
+        ]),
       },
     },
   });
